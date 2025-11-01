@@ -1,0 +1,26 @@
+// client/src/components/Sidebar.jsx
+import React from "react";
+import PageList from "./PageList";
+
+const Sidebar = () => {
+  return (
+    <aside className="app-sidebar bg-white border-end">
+      <div className="p-3 h-100 d-flex flex-column">
+        <div className="mb-3">
+          <h6 className="mb-0">Trang</h6>
+          <small className="text-muted">Quản lý ghi chú</small>
+        </div>
+
+        <div className="flex-grow-1 overflow-auto">
+          <PageList />
+        </div>
+
+        <div className="mt-3 small text-muted">
+          <div>Phiên bản: 1.0</div>
+        </div>
+      </div>
+    </aside>
+  );
+};
+
+export default Sidebar;
