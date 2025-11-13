@@ -1,5 +1,7 @@
 const User = require('../models/user.model');
 const generateToken = require('../utils/generateToken');
+const ErrorHandler = require('../utils/errorHandler'); // <-- Thêm dòng này
+
 
 /**
  * Đăng ký người dùng mới
@@ -12,7 +14,8 @@ const registerUser = async (userData) => {
   // 1. Kiểm tra email đã tồn tại chưa
   const userExists = await User.findOne({ email });
   if (userExists) {
-    throw new Error('Email already exists');
+    // Ném lỗi 400 (Bad Request)
+    throw new ErrorHandler(400, 'Email already exists');
   }
 
   // 2. Tạo người dùng mới (mật khẩu sẽ được tự động băm bởi model)
@@ -41,12 +44,12 @@ const loginUser = async (email, password) => {
 
   // 2. Kiểm tra người dùng và mật khẩu
   if (!user) {
-    throw new Error('Invalid email or password');
+    throw new ErrorHandler(401, 'Invalid email or password');
   }
 
   const isMatch = await user.comparePassword(password);
   if (!isMatch) {
-    throw new Error('Invalid email or password');
+    throw new ErrorHandler(401, 'Invalid email or password');
   }
 
   // 3. Tạo token
