@@ -1,0 +1,10 @@
+# Bỏ qua node_modules ở thư mục gốc và các thư mục con
+**/node_modules
+
+# Bỏ qua các file .env
+**/.env
+**/.env.local
+
+# Bỏ qua file build
+**/dist
+**/.DS_Store
