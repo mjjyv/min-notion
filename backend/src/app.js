@@ -7,6 +7,8 @@ const config = require('./config/env');
 const ErrorHandler = require('./utils/errorHandler');
 
 const authRoutes = require('./routes/auth.routes');
+const pageRoutes = require('./routes/page.routes'); // <-- THÊM DÒNG NÀY
+
 
 const app = express();
 
@@ -14,9 +16,11 @@ const app = express();
 app.use(helmet()); // Áp dụng các headers bảo mật
 app.use(cors()); // Cho phép Cross-Origin Requests
 
+
 // 2. Middlewares Xử lý Dữ liệu
 app.use(express.json()); // Parser cho JSON body
 app.use(express.urlencoded({ extended: true })); // Parser cho form data
+
 
 // 3. Middleware Logging
 if (config.nodeEnv === 'development') {
@@ -27,17 +31,21 @@ if (config.nodeEnv === 'development') {
 // Ví dụ: app.use('/api/v1/auth', authRoutes);
 // Sử dụng authRoutes cho tất cả request tới /api/v1/auth
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/pages', pageRoutes); // <-- THÊM DÒNG NÀY
+
 
 // 5. Route Kiểm tra Sức khỏe (Health Check)
 app.get('/api/v1/health', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'API is healthy' });
 });
 
+
 // 6. Xử lý 404 (Not Found) - Đặt sau các routes
 app.use((req, res, next) => {
   // Tạo lỗi 404 và chuyển cho global handler
   next(new ErrorHandler(404, `Resource not found - ${req.originalUrl}`));
 });
+
 
 // 7. Global Error Handler (Xử lý lỗi tập trung) - Đặt cuối cùng
 app.use((err, req, res, next) => {
