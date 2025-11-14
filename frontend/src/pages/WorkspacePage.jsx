@@ -1,70 +1,121 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { logout as apiLogout } from '../api/authApi';
-import { Button } from '../components/ui/Button';
-import { NotebookText, LogOut } from 'lucide-react'; // Thêm icon
+import Sidebar from '../features/sidebar/Sidebar';
+import { usePages } from '../hooks/usePages';
+import { Loader2, FileText } from 'lucide-react';
 
-const WorkspacePage = () => {
-  const { user, dispatch } = useAuth();
+// --- Components nội bộ cho Dashboard (Giữ nguyên) ---
 
-  const handleLogout = async () => {
-    try {
-      await apiLogout();
-    } catch (error) {
-      console.error('Logout API failed', error);
-    } finally {
-      dispatch({ type: 'LOGOUT' });
-    }
+const RecentPageCard = ({ page, onSelect }) => (
+  <div
+    onClick={() => onSelect(page._id)} // <-- Cập nhật: Cho phép click
+    className="p-4 bg-neutral-800 rounded-lg 
+               hover:bg-neutral-700 transition-colors cursor-pointer"
+  >
+    <FileText className="h-5 w-5 mb-2 text-gray-400" />
+    <span className="text-sm text-gray-100 line-clamp-1">{page.title}</span>
+  </div>
+);
+
+// --- Component mới: Placeholder cho Editor ---
+
+const PageDetail = ({ pageId, pages }) => {
+  // Tìm trang từ danh sách đã tải (tối ưu, không cần fetch lại)
+  const page = pages.find(p => p._id === pageId);
+
+  if (!page) {
+    return <div className="text-gray-100">Page not found or deleted.</div>;
+  }
+
+  // Đây là nơi Giai đoạn 4 sẽ hiển thị Editor
+  return (
+    <div className="w-full mx-auto">
+      <h1 className="text-4xl font-bold text-gray-100 mb-8">{page.title}</h1>
+      <div className="h-64 bg-neutral-800 rounded-md p-4">
+        <p className="text-gray-400">(Editor placeholder for Giai đoạn 4)</p>
+        <pre className="text-xs text-gray-500 mt-4">
+          {JSON.stringify(page.content, null, 2)}
+        </pre>
+      </div>
+    </div>
+  );
+};
+
+// --- Component chính (Dashboard) ---
+
+const HomeDashboard = ({ pages, isLoading, onSelectPage }) => {
+  const { user } = useAuth();
+  const getGreeting = () => {
+    const hours = new Date().getHours();
+    if (hours < 12) return `Good morning, ${user ? user.name : 'User'}`;
+    if (hours < 18) return `Good afternoon, ${user ? user.name : 'User'}`;
+    return `Good evening, ${user ? user.name : 'User'}`;
   };
 
   return (
-    // Bố cục App Shell
-    <div className="min-h-screen bg-gray-50">
+    <div className="w-full mx-auto">
+      <h1 className="text-3xl font-bold text-gray-100 mb-8">
+        {getGreeting()}
+      </h1>
+      <h2 className="text-lg font-medium text-gray-200 mb-4">
+        Recently visited
+      </h2>
       
-      {/* 1. Header Cố định */}
-      <header className="sticky top-0 bg-white shadow-sm border-b border-gray-200 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            
-            {/* Logo */}
-            <div className="flex items-center text-brand-dark">
-              <NotebookText className="h-6 w-6 mr-2" />
-              <span className="font-bold text-lg text-gray-900">Mini-Notion</span>
-            </div>
-
-            {/* User Menu & Logout */}
-            <div className="flex items-center space-x-4">
-              {/* Tương phản TỐT: text-gray-600 (xám) trên nền white */}
-              <span className="text-sm text-gray-600 hidden sm:block">
-                Chào mừng, {user ? user.name : 'User'}!
-              </span>
-              <Button variant="ghost" size="sm" onClick={handleLogout}>
-                <LogOut className="h-4 w-4 mr-2" />
-                Đăng xuất
-              </Button>
-            </div>
-          </div>
+      {isLoading ? (
+        <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {/* YÊU CẦU 3: Bỏ NewPageCard ở đây */}
+          {pages.slice(0, 4).map((page) => (
+            <RecentPageCard key={page._id} page={page} onSelect={onSelectPage} />
+          ))}
         </div>
-      </header>
+      )}
+    </div>
+  );
+};
 
-      {/* 2. Vùng Nội dung chính */}
-      <main>
-        <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-          {/* Box nội dung placeholder (trên nền bg-gray-50) */}
-          <div className="p-10 bg-white rounded-lg shadow-md">
-            {/* Tương phản TỐT: text-gray-900/700 trên nền white */}
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              Your Workspace
-            </h2>
-            <p className="text-gray-700 mb-2">
-              Đây là khu vực được bảo vệ.
-            </p>
-            <p className="text-gray-700">
-              Nội dung Mini-Notion (Sidebar và Editor) sẽ hiển thị ở đây (Giai
-              đoạn 3).
-            </p>
-          </div>
-        </div>
+
+// --- Component WorkspacePage (Quản lý chính) ---
+
+const WorkspacePage = () => {
+  // 1. Quản lý trạng thái trang được chọn
+  const [selectedPageId, setSelectedPageId] = useState(null);
+  const handleSelectPage = (id) => setSelectedPageId(id);
+
+  // 2. Lấy dữ liệu trang
+  const { pages, isLoading: pagesLoading } = usePages();
+
+  return (
+    <div className="flex h-screen w-screen bg-neutral-900 overflow-hidden">
+      
+      {/* 1. Sidebar (Truyền state và hàm xử lý) */}
+      <nav className="shrink-0 overflow-y-auto">
+        <Sidebar
+          onSelectPage={handleSelectPage}
+          selectedPageId={selectedPageId}
+        />
+      </nav>
+
+      {/* 2. Main Content (Render có điều kiện) */}
+      <main className="flex-1 overflow-y-auto p-6 lg:p-12">
+        {
+          // KIỂM TRA TÍCH HỢP GĐ 3:
+          // Nếu không có trang nào được chọn -> Hiển thị Dashboard
+          !selectedPageId ? (
+            <HomeDashboard
+              pages={pages}
+              isLoading={pagesLoading}
+              onSelectPage={handleSelectPage}
+            />
+          ) : (
+          // Nếu có trang được chọn -> Hiển thị "Editor"
+            <PageDetail 
+              pageId={selectedPageId} 
+              pages={pages} 
+            />
+          )
+        }
       </main>
     </div>
   );

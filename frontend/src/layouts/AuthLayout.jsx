@@ -4,7 +4,7 @@ import { NotebookText } from 'lucide-react';
 
 const AuthLayout = ({ children, title, description }) => {
   return (
-    <div className="flex min-h-screen bg-brand-light">
+    <div className="flex min-h-screen w-screen bg-brand-light">
       {/* 1. Phần bên trái (Nội dung) - Giữ nguyên */}
       <motion.div
         className="flex flex-1 flex-col justify-center py-12 px-4 sm:px-6 lg:flex-none lg:px-20 xl:px-24"
@@ -22,10 +22,10 @@ const AuthLayout = ({ children, title, description }) => {
               * text-gray-900 (gần đen) trên bg-brand-light (rất nhạt)
               * text-gray-600 (xám đậm) trên bg-brand-light (rất nhạt)
             */}
-            <h2 className="mt-6 text-3xl font-bold tracking-tight text-gray-900">
+            <h2 className="mt-6 text-3xl font-bold tracking-tight text-gray-500">
               {title}
             </h2>
-            <p className="mt-2 text-sm text-gray-600">{description}</p>
+            <p className="mt-2 text-sm text-gray-300">{description}</p>
           </div>
           <div className="mt-8">{children}</div>
         </div>
