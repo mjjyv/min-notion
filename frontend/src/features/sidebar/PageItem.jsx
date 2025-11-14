@@ -1,7 +1,7 @@
 import React from 'react';
 import { NotebookText, Trash2 } from 'lucide-react';
+import { cn } from '../../utils/cn'; // (Sử dụng tiện ích classname)
 
-// Cập nhật: Chấp nhận 'onSelect' và 'isActive'
 const PageItem = ({ page, removePage, onSelect, isActive }) => {
   const handleDelete = (e) => {
     e.stopPropagation();
@@ -10,37 +10,49 @@ const PageItem = ({ page, removePage, onSelect, isActive }) => {
     }
   };
 
-  // Cập nhật: Gọi onSelect khi click
   const handleSelect = () => {
     onSelect(page._id);
   };
 
+  // 1. Lớp CSS cho container (xử lý nền)
+  const baseClasses = cn(
+    'flex items-center justify-between w-full',
+    'px-3 text-sm rounded-md',
+    'cursor-pointer group transition-colors duration-150',
+    isActive
+      ? 'bg-neutral-700' // Nền khi Active
+      : 'hover:bg-neutral-700' // Nền khi Hover
+  );
+
+  // 2. Lớp CSS cho Icon
+  const iconClasses = cn(
+    'h-4 w-4 mr-2 flex-shrink-0',
+    isActive
+      ? 'text-white' // Icon khi Active
+      : 'text-gray-400 group-hover:text-white' // Icon khi Base/Hover
+  );
+
+  // 3. Lớp CSS cho Text (Label)
+  const textClasses = cn(
+    'truncate',
+    isActive
+      ? 'text-white font-medium' // Text khi Active (in đậm hơn)
+      : 'text-gray-300 group-hover:text-white' // Text khi Base/Hover
+  );
+
   return (
-    <div
-      onClick={handleSelect}
-      className={`
-        flex items-center justify-between w-full
-        px-3 py-2 text-sm rounded-md 
-        cursor-pointer group
-        transition-colors duration-150
-        
-        /* Cập nhật: Thay đổi màu dựa trên 'isActive' */
-        hover:bg-neutral-700
-        ${isActive ? 'bg-neutral-700' : 'bg-transparent'}
-      `}
-    >
+    <div onClick={handleSelect} className={baseClasses}>
+      {/* Icon và Tên trang */}
       <div className="flex items-center truncate">
-        <NotebookText className="h-4 w-4 mr-2 shrink-0 text-gray-400" />
-        <span className={`truncate ${isActive ? 'text-white' : 'text-gray-100'}`}>
-          {page.title}
-        </span>
+        <NotebookText className={iconClasses} />
+        <span className={textClasses}>{page.title}</span>
       </div>
 
+      {/* Nút Xóa (hover-to-show) */}
       <button
         onClick={handleDelete}
         className="
-          p-1 rounded 
-          text-gray-400
+          p-1 rounded text-gray-400
           hover:text-red-400 hover:bg-neutral-600
           opacity-0 group-hover:opacity-100 
           transition-opacity shrink-0

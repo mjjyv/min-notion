@@ -1,30 +1,32 @@
 import React from 'react';
 import { usePages } from '../../hooks/usePages';
 import PageItem from './PageItem';
-import UserProfilePopover from './UserProfilePopover'; // <-- Thay thế
+import UserProfilePopover from './UserProfilePopover';
 import SidebarLink from './SidebarLink';
+import SidebarSectionHeader from './SidebarSectionHeader';
 import {
   Loader2,
-  Plus,
   AlertTriangle,
   Search,
   Home,
   Settings,
   Trash,
+  MessageSquare,
+  Users,
 } from 'lucide-react';
 
-// Cập nhật: Chấp nhận props 'onSelectPage' và 'selectedPageId'
 const Sidebar = ({ onSelectPage, selectedPageId }) => {
   const { pages, isLoading, error, addNewPage, removePage } = usePages();
 
   const handleAddNewPage = async () => {
     const newPage = await addNewPage('Untitled');
     if (newPage) {
-      onSelectPage(newPage._id); // Tự động chọn trang mới tạo
+      onSelectPage(newPage._id);
     }
   };
 
   const renderPageList = () => {
+    // ... (logic render giữ nguyên, không thay đổi)
     if (isLoading) {
       return (
         <div className="flex justify-center items-center h-20">
@@ -45,8 +47,6 @@ const Sidebar = ({ onSelectPage, selectedPageId }) => {
         <p className="px-3 py-2 text-sm text-gray-500">No pages found.</p>
       );
     }
-    
-    // Cập nhật: Truyền 'onSelect' và 'isActive'
     return pages.map((page) => (
       <PageItem
         key={page._id}
@@ -59,42 +59,51 @@ const Sidebar = ({ onSelectPage, selectedPageId }) => {
   };
 
   return (
-    <div className="w-64 h-full bg-neutral-800 border-r border-neutral-700 p-3 flex flex-col">
-      {/* 1. Workspace Switcher (Đã bao gồm Popover Logout) */}
+    <div className="w-64 h-full bg-neutral-800 border-r border-neutral-700 
+                    p-3 flex flex-col">
+      
       <UserProfilePopover />
 
-      {/* 2. Điều hướng & Truy cập nhanh */}
+      {/* CẬP NHẬT: Truyền prop 'isActive' */}
       <div className="mt-4 space-y-1">
-        <SidebarLink icon={Search} label="Search" />
-        {/* Cập nhật: onClick để quay về "Home" (Dashboard) */}
+        <SidebarLink
+          icon={Search}
+          label="Search"
+          isActive={false} // (Tương lai: 'isActive' khi đang tìm kiếm)
+        />
         <SidebarLink
           icon={Home}
           label="Home"
           onClick={() => onSelectPage(null)}
+          isActive={selectedPageId === null} // <-- Active khi ở trang chủ
+        />
+        <SidebarLink
+          icon={Users}
+          label="Meetings"
+          isActive={false} // (Tương lai: 'isActive' khi ở trang meetings)
+        />
+        <SidebarLink
+          icon={MessageSquare}
+          label="Inbox"
+          isActive={false} // (Tương lai: 'isActive' khi ở trang inbox)
         />
       </div>
 
-      {/* 3. Quản lý Trang (Private) */}
       <div className="mt-6">
-        <div className="flex items-center justify-between px-3 mb-1">
-          <span className="text-xs font-medium text-gray-500">Private</span>
-          <button
-            onClick={handleAddNewPage}
-            className="p-1 text-gray-400 rounded hover:bg-neutral-700 hover:text-white"
-            title="New Page"
-          >
-            <Plus className="h-4 w-4" />
-          </button>
-        </div>
-        <div className="flex-1 overflow-y-auto space-y-1">
+        <SidebarSectionHeader label="Shared" onAdd={() => alert('Add Shared Page')} />
+        {/* (Render danh sách Shared) */}
+      </div>
+
+      <div className="mt-4">
+        <SidebarSectionHeader label="Private" onAdd={handleAddNewPage} />
+        <div className="flex-1 overflow-y-auto space-y-1 mt-1">
           {renderPageList()}
         </div>
       </div>
 
-      {/* 4. Ứng dụng & Hệ thống (Xóa nút Logout tạm thời) */}
       <div className="mt-auto space-y-1">
-        <SidebarLink icon={Settings} label="Settings" />
-        <SidebarLink icon={Trash} label="Trash" />
+        <SidebarLink icon={Settings} label="Settings" isActive={false} />
+        <SidebarLink icon={Trash} label="Trash" isActive={false} />
       </div>
     </div>
   );

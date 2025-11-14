@@ -1,6 +1,23 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
+// NÂNG CẤP GĐ 4: Định nghĩa schema cho một Block
+// Mongoose sẽ tự động gán _id cho mỗi block
+const blockSchema = new Schema({
+  type: {
+    type: String,
+    enum: ['text', 'todo'], // Có thể mở rộng (heading, image...)
+    required: true,
+  },
+  data: {
+    type: Object, // Sẽ chứa:
+                  // 1. { text: "...", checked: false } cho 'todo'
+                  // 2. { contentState: ... } (JSON) cho 'text' (Draft.js)
+    required: true,
+    default: {},
+  },
+});
+
 const pageSchema = new Schema(
   {
     title: {
@@ -10,33 +27,20 @@ const pageSchema = new Schema(
       default: 'Untitled',
     },
     
-    // Nơi lưu trữ nội dung block-based
-    // Sẽ được Giai đoạn 4 định nghĩa chi tiết hơn
-    // (Ví dụ: [{ blockId: '...', type: 'text', data: {...} }])
-    content: {
-      type: Array,
-      default: [],
-    },
+    // NÂNG CẤP GĐ 4: 'content' giờ là một mảng các 'blockSchema'
+    content: [blockSchema],
 
-    // (Tùy chọn, có thể thêm sau)
-    // icon: { type: String, default: null },
-    // coverImage: { type: String, default: null },
-
-    // Quan trọng: Liên kết trang này với một người dùng
     userId: {
       type: Schema.Types.ObjectId,
       required: true,
-      ref: 'User', // Tham chiếu đến 'User' model (đã tạo ở GĐ 2)
+      ref: 'User',
     },
   },
   {
-    timestamps: true, // Tự động thêm createdAt và updatedAt
+    timestamps: true,
   }
 );
 
-// Thêm Index (chỉ mục) vào userId
-// Điều này TỐI ƯU HÓA mạnh mẽ việc truy vấn
-// "lấy tất cả các trang của người dùng X".
 pageSchema.index({ userId: 1 });
 
 const Page = mongoose.model('Page', pageSchema);

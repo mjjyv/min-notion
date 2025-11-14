@@ -65,10 +65,35 @@ const deletePage = asyncHandler(async (req, res, next) => {
   res.status(204).send();
 });
 
+
+/**
+ * NÂNG CẤP GĐ 4:
+ * @desc    Cập nhật nội dung (content) của một trang
+ * @route   PUT /api/v1/pages/:id/content
+ * @access  Private
+ */
+const updateContent = asyncHandler(async (req, res, next) => {
+  // Controller này chỉ nhận 'content'
+  const { content } = req.body;
+
+  if (content === undefined) {
+    return next(new ErrorHandler(400, 'Content array is required'));
+  }
+
+  const updatedContent = await pageService.updatePageContent(
+    req.params.id,
+    req.user.id,
+    content,
+  );
+  
+  res.status(200).json(updatedContent);
+});
+
 module.exports = {
   createPage,
   getMyPages,
   getPage,
   updatePage,
   deletePage,
+  updateContent, // <-- THÊM MỚI
 };

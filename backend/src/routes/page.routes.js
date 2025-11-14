@@ -20,4 +20,7 @@ router
   .put(pageController.updatePage)     // PUT /api/v1/pages/:id (Cập nhật trang)
   .delete(pageController.deletePage); // DELETE /api/v1/pages/:id (Xóa trang)
 
+// NÂNG CẤP GĐ 4: Route chuyên biệt cho content (auto-save)
+router.put('/:id/content', pageController.updateContent);
+
 module.exports = router;

@@ -1,32 +1,47 @@
+const colors = require('tailwindcss/colors');
+
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  // 1. Ép Dark Mode (như Notion)
+  darkMode: 'class', 
+  
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
   theme: {
     extend: {
       colors: {
-        // Tạo một bảng màu tùy chỉnh cho thương hiệu
+        // 2. Định nghĩa màu (như đã dùng ở GĐ 3)
+        neutral: colors.neutral,
         brand: {
-          light: '#f0f4ff', // Nền nhạt
-          DEFAULT: '#4a69ff', // Màu chính
-          medium: '#3b55cc', // Hover
-          dark: '#2c4099', // Active/Focus
+          DEFAULT: '#4a69ff',
+          medium: '#3b55cc',
+          dark: '#2c4099',
+          light: '#f0f4ff',
         },
       },
-      // Thêm hiệu ứng cho form
-      keyframes: {
-        shake: {
-          '0%, 100%': { transform: 'translateX(0)' },
-          '10%, 30%, 50%, 70%, 90%': { transform: 'translateX(-10px)' },
-          '20%, 40%, 60%, 80%': { transform: 'translateX(10px)' },
+      // 3. Thêm plugin typography cho Draft.js
+      typography: (theme) => ({
+        DEFAULT: {
+          css: {
+            color: theme('colors.gray.100'), // Chữ prose màu sáng
+            a: {
+              color: theme('colors.blue.400'),
+              '&:hover': {
+                color: theme('colors.blue.300'),
+              },
+            },
+            strong: { color: theme('colors.gray.100') },
+            // ... (thêm các style khác nếu cần)
+          },
         },
-      },
-      animation: {
-        shake: 'shake 5s ease-in-out',
-      },
+      }),
     },
   },
+  // 4. Thêm plugins
   plugins: [
-    // Thêm plugin form của Tailwind để reset style
     require('@tailwindcss/forms'),
+    require('@tailwindcss/typography'),
   ],
-};
+}

@@ -58,3 +58,20 @@ export const logout = async () => {
     throw error.response.data || error.message;
   }
 };
+
+/**
+ * NÂNG CẤP GĐ 4:
+ * Cập nhật chỉ mảng 'content' của một trang.
+ * @param {string} id - Page ID
+ * @param {Array<object>} content - Mảng content blocks
+ * @returns {Promise<object>} Mảng content đã cập nhật
+ */
+export const updatePageContent = async (id, content) => {
+  try {
+    // Gọi API mới (đã tạo ở backend)
+    const response = await api.put(`/pages/${id}/content`, { content });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: error.message };
+  }
+};

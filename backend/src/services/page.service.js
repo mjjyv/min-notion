@@ -88,10 +88,37 @@ const deletePage = async (pageId, userId) => {
   await page.deleteOne(); // Sử dụng deleteOne() thay vì remove()
 };
 
+
+/**
+ * NÂNG CẤP GĐ 4:
+ * Cập nhật CHỈ content của một trang (Tối ưu cho auto-save)
+ * @param {string} pageId - ID của trang
+ * @param {string} userId - ID của người dùng
+ * @param {Array} contentData - Mảng content blocks
+ * @returns {Promise<object>} Trang đã được cập nhật
+ */
+const updatePageContent = async (pageId, userId, contentData) => {
+  // getPageById đã bao gồm kiểm tra quyền sở hữu
+  const page = await getPageById(pageId, userId);
+
+  // Validate (GĐ 5 sẽ làm tốt hơn)
+  if (!Array.isArray(contentData)) {
+    throw new ErrorHandler(400, 'Content must be an array');
+  }
+
+  page.content = contentData;
+  await page.save();
+  return page.content; // Chỉ trả về content đã cập nhật
+};
+
+
 module.exports = {
   createPage,
+  
   getPagesByUser,
   getPageById,
+  
   updatePage,
   deletePage,
+  updatePageContent, // <-- THÊM MỚI
 };

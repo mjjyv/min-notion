@@ -1,4 +1,32 @@
 @import "tailwindcss";
+@tailwind utilities;
+
+@layer base {
+  /* 1. Nền tảng Dark Mode (như GĐ 3) */
+  html {
+    /* Đổi font (tùy chọn, nhưng tốt cho editor) */
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  }
+  body {
+    @apply bg-neutral-900 text-gray-100;
+  }
+
+  /* 2. Style cơ bản cho Draft.js Editor (GĐ 4) */
+  .DraftEditor-root {
+    @apply w-full h-full text-base text-gray-100;
+  }
+  .DraftEditor-editorContainer {
+    @apply h-full;
+  }
+  .public-DraftEditor-content {
+    @apply min-h-[100px] p-1;
+  }
+  /* Style cho placeholder (ví dụ: "Type '/' for commands...") */
+  .public-DraftEditorPlaceholder-root {
+    @apply absolute text-gray-500 pointer-events-none;
+  }
+}
+
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
