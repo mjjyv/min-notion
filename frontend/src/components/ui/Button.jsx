@@ -9,7 +9,10 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: 'bg-brand text-white hover:bg-brand-medium',
+        default: 'bg-brand text-white hover:bg-brand-medium active:bg-brand-darker',
+        // Thêm một variant để tùy chỉnh màu
+        primary: 'bg-brand text-white hover:bg-brand-medium', // Có thể giữ nguyên
+        secondary: 'bg-gray-600 text-white hover:bg-gray-500 active:bg-gray-700',
         destructive: 'bg-red-500 text-white hover:bg-red-600',
         outline: 'border border-input bg-transparent hover:bg-gray-100',
         ghost: 'hover:bg-gray-100',

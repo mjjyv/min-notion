@@ -16,7 +16,7 @@ const PageItem = ({ page, removePage, onSelect, isActive }) => {
 
   // 1. Lớp CSS cho container (xử lý nền)
   const baseClasses = cn(
-    'flex items-center justify-between w-full',
+    'flex p-1.5 items-center justify-between w-full',
     'px-3 text-sm rounded-md',
     'cursor-pointer group transition-colors duration-150',
     isActive

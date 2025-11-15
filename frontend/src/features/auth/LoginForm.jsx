@@ -7,56 +7,88 @@ import { login } from '../../api/authApi';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Label } from '../../components/ui/Label';
-import { Github, Mail } from 'lucide-react'; // Icons
+import FormError from '../../components/ui/FormError'; // <-- Mới
+import { Github, Mail, AlertTriangle } from 'lucide-react';
+import { motion } from 'framer-motion'; // <-- Mới
 
-// 1. Định nghĩa Schema Validation
 const loginSchema = z.object({
   email: z.string().email({ message: 'Email không hợp lệ.' }),
   password: z.string().min(1, { message: 'Vui lòng nhập mật khẩu.' }),
 });
 
+// Cấu hình hiệu ứng
+const formVariants = {
+  hidden: { opacity: 0, y: 10 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      staggerChildren: 0.1, // Hiệu ứng cho từng phần tử con
+    },
+  },
+};
+const itemVariants = {
+  hidden: { opacity: 0, y: 10 },
+  show: { opacity: 1, y: 0 },
+};
+
 const LoginForm = () => {
   const { dispatch } = useAuth();
-  
-  // 2. Khởi tạo react-hook-form
   const {
     register,
     handleSubmit,
     setError,
-    formState: { errors, isSubmitting }, // Lấy trạng thái loading và lỗi
+    formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(loginSchema),
   });
 
-  // 3. Xử lý Submit
   const onSubmit = async (data) => {
     try {
       const { email, password } = data;
-      const apiResponse = await login(email, password); // { user, token }
-      
-      // Cập nhật Context
+      const apiResponse = await login(email, password);
       dispatch({ type: 'LOGIN_SUCCESS', payload: apiResponse });
-      // (Không cần điều hướng, App.jsx sẽ tự động xử lý)
-
     } catch (err) {
-      // 4. Xử lý lỗi từ server
       const message = err.message || 'Đã xảy ra lỗi. Vui lòng thử lại.';
-      setError('root', { message }); // Gán lỗi chung cho form
+      setError('root', { message });
     }
   };
 
   return (
-    <>
-      {/* 5. Form UI */}
+    <motion.div
+      variants={formVariants}
+      initial="hidden"
+      animate="show"
+      className="space-y-6"
+    >
+      {/* CẢI TIẾN: Hiển thị Đăng nhập xã hội trước */}
+      <motion.div variants={itemVariants} className="grid grid-cols-2 gap-3">
+        <Button variant="outline" className="text-gray-100 hover:text-black" disabled={isSubmitting}>
+          <Github className="mr-2 h-4 w-4" /> GitHub
+        </Button>
+        <Button variant="outline" className="text-gray-100 hover:text-black" disabled={isSubmitting}>
+          <Mail className="mr-2 h-4 w-4" /> Google
+        </Button>
+      </motion.div>
+
+      {/* Dải phân cách */}
+      <motion.div variants={itemVariants} className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-neutral-700" />
+        </div>
+        <div className="relative flex justify-center text-sm">
+          <span className="bg-brand-light px-2 text-gray-400">
+            Hoặc đăng nhập với email
+          </span>
+        </div>
+      </motion.div>
+
+      {/* CẢI TIẾN: Sử dụng FormError */}
+      <FormError message={errors.root?.message} />
+
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        {/* Hiển thị lỗi chung (từ server) */}
-        {errors.root && (
-          <div className="text-red-500 text-sm">{errors.root.message}</div>
-        )}
-        
-        {/* Trường Email */}
-        <div className="space-y-1">
-          <Label htmlFor="email">Email</Label>
+        <motion.div variants={itemVariants} className="space-y-1">
+          <Label htmlFor="email" className="text-gray-300">Email</Label>
           <Input
             id="email"
             type="email"
@@ -65,13 +97,15 @@ const LoginForm = () => {
             {...register('email')}
           />
           {errors.email && (
-            <p className="text-red-500 text-sm">{errors.email.message}</p>
+            <p className="flex items-center text-red-400 text-sm mt-1">
+              <AlertTriangle className="h-4 w-4 mr-1" />
+              {errors.email.message}
+            </p>
           )}
-        </div>
+        </motion.div>
 
-        {/* Trường Password */}
-        <div className="space-y-1">
-          <Label htmlFor="password">Mật khẩu</Label>
+        <motion.div variants={itemVariants} className="space-y-1">
+          <Label htmlFor="password" className="text-gray-300">Mật khẩu</Label>
           <Input
             id="password"
             type="password"
@@ -80,49 +114,25 @@ const LoginForm = () => {
             {...register('password')}
           />
           {errors.password && (
-            <p className="text-red-500 text-sm">{errors.password.message}</p>
+            <p className="flex items-center text-red-400 text-sm mt-1">
+              <AlertTriangle className="h-4 w-4 mr-1" />
+              {errors.password.message}
+            </p>
           )}
-        </div>
+        </motion.div>
 
-        {/* Nút Submit (có trạng thái loading) */}
-        <div>
-          <Button type="submit" className="w-full" isLoading={isSubmitting}>
+        <motion.div variants={itemVariants}>
+          <Button
+            type="submit"
+            variant="secondary"
+            className="w-full"
+            isLoading={isSubmitting}
+          >
             Đăng nhập
           </Button>
-        </div>
+        </motion.div>
       </form>
-
-      {/* 6. Phần OAuth (Đăng nhập khác) */}
-      <div className="mt-6">
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-300" />
-          </div>
-          <div className="relative flex justify-center text-sm">
-            {/* <span className="bg-white px-2 text-gray-500">Hoặc tiếp tục với</span> */}
-            <div class="relative flex items-center">
-              <div class="grow bg-amber-50 border-t border-gray-300"></div> 
-              
-              <span class="shrink mx-4 bg-amber-50 p-1 rounded-sm text-sm text-gray-500 font-medium">
-                HOẶC TIẾP TỤC VỚI
-              </span>
-              
-              <div class="grow border-t border-gray-300"></div>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-6 grid grid-cols-2 gap-3">
-          {/* Nút OAuth (chưa có chức năng) */}
-          <Button variant="outline" disabled={isSubmitting}>
-            <Github className="mr-2 h-4 w-4" /> GitHub
-          </Button>
-          <Button variant="outline" disabled={isSubmitting}>
-            <Mail className="mr-2 h-4 w-4" /> Google
-          </Button>
-        </div>
-      </div>
-    </>
+    </motion.div>
   );
 };
 export default LoginForm;

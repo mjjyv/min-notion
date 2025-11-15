@@ -1,37 +1,31 @@
 import React, { useState } from 'react';
 
 /**
+ * @param {string} blockId - ID tạm thời (tempClientId) của block này
  * @param {object} initialData - { text: "...", checked: false }
- * @param {function} onChange - Hàm callback khi nội dung thay đổi
- * @param {string} blockId - ID của block này
+ * @param {function} onChange - Hàm callback (blockId, newData) khi thay đổi
  */
 const TodoBlock = ({ blockId, initialData, onChange }) => {
-  // 1. Quản lý trạng thái nội bộ
-  const [text, setText] = useState(initialData.text || '');
-  const [checked, setChecked] = useState(initialData.checked || false);
+  const [text, setText] = useState(initialData?.text || '');
+  const [checked, setChecked] = useState(initialData?.checked || false);
 
-  // 2. Xử lý thay đổi Checkbox
   const handleCheckChange = (e) => {
     const newChecked = e.target.checked;
     setChecked(newChecked);
-    // Báo cho parent (CoreEditor)
     onChange(blockId, { text, checked: newChecked });
   };
 
-  // 3. Xử lý gõ text
   const handleTextChange = (e) => {
     setText(e.target.value);
   };
 
-  // 4. Xử lý khi ngừng gõ (onBlur) để lưu
+  // Gửi thay đổi text khi người dùng rời khỏi (blur) input
   const handleBlur = () => {
-    // Chỉ báo thay đổi khi blur (tiết kiệm)
     onChange(blockId, { text, checked });
   };
 
   return (
     <div className="flex items-center space-x-3 group">
-      {/* 1. Checkbox (Tailwind Forms) */}
       <input
         type="checkbox"
         checked={checked}
@@ -42,7 +36,6 @@ const TodoBlock = ({ blockId, initialData, onChange }) => {
         "
       />
       
-      {/* 2. Text Input */}
       <input
         type="text"
         value={text}

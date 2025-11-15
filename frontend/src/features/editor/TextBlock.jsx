@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Editor,
   EditorState,
@@ -6,48 +6,93 @@ import {
   convertToRaw,
   convertFromRaw,
 } from 'draft-js';
-import 'draft-js/dist/Draft.css'; // Import CSS cơ bản của Draft.js
-import BlockToolbar from './BlockToolbar';
+import 'draft-js/dist/Draft.css';
+import FloatingToolbar from './FloatingToolbar';
+
+// Hàm gán Class CSS cho Block
+const getBlockStyle = (block) => {
+  switch (block.getType()) {
+    case 'header-one':
+      return 'editor-h1';
+    case 'blockquote':
+      return 'editor-blockquote';
+    default:
+      return 'editor-paragraph';
+  }
+};
 
 /**
- * @param {object} initialData - { contentState: ... } (JSON từ DB)
- * @param {function} onChange - Hàm callback khi nội dung thay đổi
- * @param {string} blockId - ID của block này
+ * @param {string} blockId - ID tạm thời (tempClientId) của block này
+ * @param {object} initialData - { contentState: ... } (JSON)
+ * @param {function} onChange - Hàm callback (blockId, newData) khi thay đổi
  */
 const TextBlock = ({ blockId, initialData, onChange }) => {
-  // 1. Khởi tạo EditorState
   const [editorState, setEditorState] = useState(() => {
     if (initialData && initialData.contentState) {
-      // Tải nội dung (JSON) từ DB
-      const rawContent = JSON.parse(initialData.contentState);
-      const contentState = convertFromRaw(rawContent);
-      return EditorState.createWithContent(contentState);
+      try {
+        const rawContent = JSON.parse(initialData.contentState);
+        const contentState = convertFromRaw(rawContent);
+        return EditorState.createWithContent(contentState);
+      } catch (e) {
+        console.error("Failed to parse contentState", e);
+        return EditorState.createEmpty();
+      }
     }
-    // Hoặc tạo mới
     return EditorState.createEmpty();
   });
 
-  const [showToolbar, setShowToolbar] = useState(false);
+  const [toolbarPosition, setToolbarPosition] = useState(null);
+  const editorContainerRef = useRef(null);
+  const toolbarRef = useRef(null);
 
-  // 2. Xử lý thay đổi (gõ phím)
+  const calculateToolbarPosition = () => {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0 || !editorContainerRef.current) {
+      return null;
+    }
+
+    const range = selection.getRangeAt(0);
+    const rangeRect = range.getBoundingClientRect();
+    const containerRect = editorContainerRef.current.getBoundingClientRect();
+    
+    if (rangeRect.width === 0 && rangeRect.height === 0) {
+      return null;
+    }
+    
+    const toolbarWidth = toolbarRef.current ? toolbarRef.current.offsetWidth : 160;
+    let left = rangeRect.left - containerRect.left + (rangeRect.width / 2) - (toolbarWidth / 2);
+    let top = rangeRect.top - containerRect.top - 50;
+    if (left < 0) left = 0;
+
+    return { top, left, opacity: 1 };
+  };
+
   const handleEditorChange = (newState) => {
     setEditorState(newState);
+    const selectionState = newState.getSelection();
 
-    // Kiểm tra xem nội dung có thay đổi không
+    if (!selectionState.isCollapsed()) {
+      setTimeout(() => {
+        const position = calculateToolbarPosition();
+        if (position) {
+          setToolbarPosition(position);
+        }
+      }, 0);
+    } else {
+      if (toolbarPosition) {
+        setToolbarPosition(null);
+      }
+    }
+
     const contentState = newState.getCurrentContent();
     const oldContentState = editorState.getCurrentContent();
-
     if (contentState !== oldContentState) {
-      // Chuyển nội dung sang JSON thô để chuẩn bị lưu
       const rawContent = convertToRaw(contentState);
       const dataToSave = { contentState: JSON.stringify(rawContent) };
-      
-      // Báo cho parent (CoreEditor) biết có thay đổi
       onChange(blockId, dataToSave);
     }
   };
 
-  // 3. Xử lý phím nóng (Hotkeys: Ctrl+B, Ctrl+I)
   const handleKeyCommand = (command, state) => {
     const newState = RichUtils.handleKeyCommand(state, command);
     if (newState) {
@@ -57,42 +102,45 @@ const TextBlock = ({ blockId, initialData, onChange }) => {
     return 'not-handled';
   };
 
-  // 4. Xử lý nút bấm trên Toolbar
   const toggleInlineStyle = (inlineStyle) => {
     const newState = RichUtils.toggleInlineStyle(editorState, inlineStyle);
     handleEditorChange(newState);
   };
-  
-  // 5. Hiển thị toolbar khi editor được focus
-  const onFocus = () => setShowToolbar(true);
-  // (Tùy chọn: onBlur = () => setShowToolbar(false))
+
+  const toggleBlockType = (blockType) => {
+    const newState = RichUtils.toggleBlockType(editorState, blockType);
+    handleEditorChange(newState);
+  };
+
+  const selection = editorState.getSelection();
+  const currentBlockType = editorState
+    .getCurrentContent()
+    .getBlockForKey(selection.getStartKey())
+    .getType();
 
   return (
-    <div className="relative w-full group">
-      {/* Toolbar (Tạm thời luôn hiển thị khi focus)
-        (Tương lai: Có thể làm Pop-up khi bôi đen text)
-      */}
-      {showToolbar && (
-        <BlockToolbar
-          editorState={editorState}
-          onToggle={toggleInlineStyle}
-        />
-      )}
+    <div className="relative w-full group" ref={editorContainerRef}>
+      <FloatingToolbar
+        ref={toolbarRef}
+        position={toolbarPosition}
+        editorState={editorState}
+        onToggleInlineStyle={toggleInlineStyle}
+        onToggleBlockType={toggleBlockType}
+        currentBlockType={currentBlockType}
+      />
 
-      {/* Container của Draft.js
-        Sử dụng lớp 'prose' của Tailwind Typography (từ GĐ 4.1)
-        và các style custom (từ index.css)
-      */}
-      <div 
+      <div
         className="mt-2 prose prose-invert max-w-none 
-                   prose-strong:text-gray-100 prose-em:text-gray-100"
-        onClick={onFocus}
+                   prose-strong:text-gray-100 prose-em:text-gray-100
+                   prose-code:bg-neutral-700 prose-code:text-red-300
+                   prose-u:decoration-gray-400"
       >
         <Editor
           editorState={editorState}
           onChange={handleEditorChange}
           handleKeyCommand={handleKeyCommand}
           placeholder="Start typing..."
+          blockStyleFn={getBlockStyle}
         />
       </div>
     </div>
