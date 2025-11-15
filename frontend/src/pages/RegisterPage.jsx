@@ -10,11 +10,11 @@ const RegisterPage = () => {
       description="Bắt đầu hành trình ghi chú của bạn ngay hôm nay."
     >
       <RegisterForm />
-      <p className="mt-8 text-center text-sm text-gray-300">
+      <p className="mt-8 text-center text-sm text-gray-400">
         Đã có tài khoản?{' '}
         <Link
           to="/login"
-          className="font-medium text-brand hover:text-brand-medium"
+          className="font-medium text-brand hover:text-brand-medium transition-colors"
         >
           Đăng nhập
         </Link>

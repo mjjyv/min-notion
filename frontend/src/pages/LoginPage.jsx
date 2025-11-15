@@ -10,11 +10,11 @@ const LoginPage = () => {
       description="Đăng nhập vào tài khoản Mini-Notion của bạn."
     >
       <LoginForm />
-      <p className="mt-8 text-center text-sm text-gray-300">
+      <p className="mt-8 text-center text-sm text-gray-400">
         Chưa có tài khoản?{' '}
         <Link
           to="/register"
-          className="font-medium text-brand hover:text-brand-medium"
+          className="font-medium text-brand hover:text-brand-medium transition-colors"
         >
           Đăng ký ngay
         </Link>

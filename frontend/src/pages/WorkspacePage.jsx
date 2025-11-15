@@ -1,12 +1,18 @@
-import React, { useState } from 'react';
-import { useAuth } from '../contexts/AuthContext'; // Hook (Auth)
-import { usePages } from '../hooks/usePages'; // Hook (Data)
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { usePages } from '../hooks/usePages';
 import Sidebar from '../features/sidebar/Sidebar';
-import { Loader2, FileText, Image, Smile } from 'lucide-react';
+import { getPageDetail } from '../api/pageApi';
+import CoreEditor from '../features/editor/CoreEditor';
+import {
+  Loader2,
+  FileText,
+  Image,
+  Smile,
+  AlertTriangle,
+} from 'lucide-react';
 
-// --- TÁCH BIỆT COMPONENT CON (UI) ---
-
-// 1. Giao diện "Home" Dashboard
+// --- COMPONENT CON 1: "HOME" DASHBOARD ---
 const HomeDashboard = ({ user, pages, isLoading, onSelectPage }) => {
   const getGreeting = () => {
     const hours = new Date().getHours();
@@ -46,93 +52,107 @@ const HomeDashboard = ({ user, pages, isLoading, onSelectPage }) => {
   );
 };
 
-// 2. Giao diện "Page Detail" (Nền tảng cho Giai đoạn 4)
-const PageDetail = ({ pageId, pages }) => {
-  const page = pages.find((p) => p._id === pageId);
+// --- COMPONENT CON 2: "PAGE DETAIL" ---
+const PageDetail = ({ pageId }) => {
+  const [pageData, setPageData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  if (!page) {
-    // Xử lý trường hợp trang bị xóa hoặc không tìm thấy
+  useEffect(() => {
+    if (!pageId) return;
+    const fetchPage = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const data = await getPageDetail(pageId);
+        setPageData(data);
+      } catch (err) {
+        setError(err.message || 'Failed to load page');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchPage();
+  }, [pageId]);
+
+  if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-full">
+      <div className="flex justify-center items-center h-full pt-40">
+        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col justify-center items-center h-full pt-40">
+        <AlertTriangle className="h-10 w-10 text-red-400 mb-4" />
+        <p className="text-red-400">Error: {error}</p>
+      </div>
+    );
+  }
+
+  if (!pageData) {
+    return (
+      <div className="flex justify-center items-center h-full pt-40">
         <p className="text-gray-400">Page not found.</p>
       </div>
     );
   }
 
-  // Đây là nơi Giai đoạn 4 sẽ bắt đầu
   return (
     <div className="max-w-3xl mx-auto">
-      {/* Tương lai: Cover Image */}
       <div className="h-32 group">
         <button className="hidden group-hover:flex items-center text-sm text-gray-300 bg-neutral-800/50 rounded px-2 py-1 absolute top-20 right-20">
           <Image className="h-4 w-4 mr-1" /> Add cover
         </button>
       </div>
-
-      {/* Tương lai: Icon */}
       <div className="px-4">
         <button className="text-4xl mb-4 hover:bg-neutral-700 rounded p-1">
           <Smile className="h-10 w-10 text-gray-400" />
         </button>
       </div>
-
-      {/* Tiêu đề (Chuẩn bị cho GĐ 4: contentEditable) */}
       <h1
         className="text-4xl font-bold text-gray-100 mb-8 px-4 outline-none"
-        contentEditable={true} // Bật tính năng chỉnh sửa
-        suppressContentEditableWarning={true} // Tắt cảnh báo của React
+        contentEditable={true}
+        suppressContentEditableWarning={true}
       >
-        {page.title}
+        {pageData.title}
       </h1>
 
-      {/* Tương lai: Trình soạn thảo (Block Editor) */}
-      <div className="min-h-[400px] px-4">
-        <p className="text-gray-500">
-          (Giai đoạn 4: Trình soạn thảo Draft.js sẽ bắt đầu ở đây...)
-        </p>
-      </div>
+      <CoreEditor
+        pageId={pageData._id}
+        initialContent={pageData.content}
+      />
     </div>
   );
 };
 
 // --- COMPONENT CHÍNH (QUẢN LÝ STATE) ---
-
 const WorkspacePage = () => {
-  // 1. Quản lý State (Cấp cao nhất)
   const { user } = useAuth();
-  const {
-    pages,
-    isLoading: pagesLoading,
-    error,
-    addNewPage,
-    removePage,
-  } = usePages(); // Gọi hook MỘT LẦN
+  const { pages, isLoading: pagesLoading, error, addNewPage, removePage } =
+    usePages();
 
   const [selectedPageId, setSelectedPageId] = useState(null);
   const handleSelectPage = (id) => setSelectedPageId(id);
 
   return (
-    <div className="flex h-screen bg-neutral-900 overflow-hidden">
-      
-      {/* 2. Sidebar (Truyền props xuống) */}
+    <div className="flex h-screen w-screen bg-neutral-900 overflow-hidden">
       <nav className="shrink-0 overflow-y-auto">
         <Sidebar
-          // Quản lý trang
           pages={pages}
           isLoading={pagesLoading}
           error={error}
           addNewPage={addNewPage}
           removePage={removePage}
-          // Quản lý state (chọn trang)
           onSelectPage={handleSelectPage}
           selectedPageId={selectedPageId}
         />
       </nav>
 
-      {/* 3. Main Content (Render có điều kiện) */}
       <main className="flex-1 overflow-y-auto p-6 lg:p-12">
         {!selectedPageId ? (
-          // Hiển thị "Home" Dashboard
           <HomeDashboard
             user={user}
             pages={pages}
@@ -140,8 +160,7 @@ const WorkspacePage = () => {
             onSelectPage={handleSelectPage}
           />
         ) : (
-          // Hiển thị "Page Detail"
-          <PageDetail pageId={selectedPageId} pages={pages} />
+          <PageDetail pageId={selectedPageId} />
         )}
       </main>
     </div>

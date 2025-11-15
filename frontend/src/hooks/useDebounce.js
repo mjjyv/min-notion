@@ -1,26 +1,30 @@
 import { useState, useEffect } from 'react';
 
 /**
- * Hook để trì hoãn (debounce) một giá trị.
- * Chỉ cập nhật giá trị trả về sau khi 'delay' (ms) trôi qua.
- * @param {any} value Giá trị cần trì hoãn
- * @param {number} delay Thời gian trì hoãn (ms)
+ * Hook tùy chỉnh để trì hoãn (debounce) một giá trị.
+ * @param {any} value - Giá trị cần trì hoãn (ví dụ: mảng blocks, chuỗi title)
+ * @param {number} delay - Thời gian trì hoãn (ms), ví dụ: 1000
  * @returns {any} Giá trị đã trì hoãn
  */
-export const useDebounce = (value, delay) => {
+function useDebounce(value, delay) {
+  // 1. State để lưu trữ giá trị đã trì hoãn
   const [debouncedValue, setDebouncedValue] = useState(value);
 
   useEffect(() => {
-    // Đặt timeout để cập nhật giá trị sau khi hết 'delay'
+    // 2. Thiết lập một timer
     const handler = setTimeout(() => {
       setDebouncedValue(value);
     }, delay);
 
-    // Hủy timeout nếu 'value' hoặc 'delay' thay đổi
+    // 3. Hủy timer nếu 'value' hoặc 'delay' thay đổi
+    // (Điều này ngăn việc cập nhật nếu người dùng vẫn đang gõ)
     return () => {
       clearTimeout(handler);
     };
-  }, [value, delay]);
+  }, [value, delay]); // Chỉ chạy lại nếu value hoặc delay thay đổi
 
+  // 4. Trả về giá trị đã trì hoãn
   return debouncedValue;
-};
+}
+
+export default useDebounce;

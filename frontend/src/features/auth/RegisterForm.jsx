@@ -6,9 +6,11 @@ import { register as apiRegister } from '../../api/authApi';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Label } from '../../components/ui/Label';
+import FormError from '../../components/ui/FormError'; // <-- Mới
+import { AlertTriangle } from 'lucide-react'; // <-- Mới
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion'; // <-- Mới
 
-// 1. Schema Validation (có so sánh mật khẩu)
 const registerSchema = z
   .object({
     name: z.string().min(2, { message: 'Tên phải có ít nhất 2 ký tự.' }),
@@ -18,15 +20,28 @@ const registerSchema = z
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: 'Mật khẩu không khớp.',
-    path: ['confirmPassword'], // Gán lỗi cho trường confirmPassword
+    path: ['confirmPassword'],
   });
+
+// Cấu hình hiệu ứng
+const formVariants = {
+  hidden: { opacity: 0, y: 10 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+};
+const itemVariants = {
+  hidden: { opacity: 0, y: 10 },
+  show: { opacity: 1, y: 0 },
+};
 
 const RegisterForm = () => {
   const navigate = useNavigate();
-  // State cho thông báo thành công
   const [successMessage, setSuccessMessage] = useState('');
-
-  // 2. Khởi tạo react-hook-form
   const {
     register,
     handleSubmit,
@@ -36,108 +51,117 @@ const RegisterForm = () => {
     resolver: zodResolver(registerSchema),
   });
 
-  // 3. Xử lý Submit
   const onSubmit = async (data) => {
     setSuccessMessage('');
     try {
       const { name, email, password } = data;
       await apiRegister(name, email, password);
-      
-      // Đăng ký thành công
       setSuccessMessage('Đăng ký thành công! Đang chuyển đến trang đăng nhập...');
       setTimeout(() => {
         navigate('/login');
       }, 2000);
-
     } catch (err) {
-      // 4. Xử lý lỗi (ví dụ: email tồn tại)
       const message = err.message || 'Đã xảy ra lỗi. Vui lòng thử lại.';
       setError('root', { message });
     }
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      {/* 5. Hiển thị Lỗi hoặc Thành công */}
-      {errors.root && (
-        <div className="text-red-500 text-sm">{errors.root.message}</div>
-      )}
+    <motion.div
+      variants={formVariants}
+      initial="hidden"
+      animate="show"
+      className="space-y-6"
+    >
+      {/* CẢI TIẾN: Sử dụng FormError và Success Message */}
+      <FormError message={errors.root?.message} />
       {successMessage && (
-        <div className="text-green-600 text-sm">{successMessage}</div>
+        <div className="text-green-400 text-sm p-3 bg-green-900/20 border border-green-500/50 rounded-md">
+          {successMessage}
+        </div>
       )}
-      
-      {/* Trường Name */}
-      <div className="space-y-1">
-        <Label htmlFor="name">Tên</Label>
-        <Input
-          id="name"
-          type="text"
-          autoComplete="name"
-          hasError={!!errors.name}
-          {...register('name')}
-        />
-        {errors.name && (
-          <p className="text-red-500 text-sm">{errors.name.message}</p>
-        )}
-      </div>
 
-      {/* Trường Email */}
-      <div className="space-y-1">
-        <Label htmlFor="email">Email</Label>
-        <Input
-          id="email"
-          type="email"
-          autoComplete="email"
-          hasError={!!errors.email}
-          {...register('email')}
-        />
-        {errors.email && (
-          <p className="text-red-500 text-sm">{errors.email.message}</p>
-        )}
-      </div>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <motion.div variants={itemVariants} className="space-y-1">
+          <Label htmlFor="name" className="text-gray-300">Tên</Label>
+          <Input
+            id="name"
+            type="text"
+            autoComplete="name"
+            hasError={!!errors.name}
+            {...register('name')}
+          />
+          {errors.name && (
+            <p className="flex items-center text-red-400 text-sm mt-1">
+              <AlertTriangle className="h-4 w-4 mr-1" />
+              {errors.name.message}
+            </p>
+          )}
+        </motion.div>
 
-      {/* Trường Password */}
-      <div className="space-y-1">
-        <Label htmlFor="password">Mật khẩu</Label>
-        <Input
-          id="password"
-          type="password"
-          autoComplete="new-password"
-          hasError={!!errors.password}
-          {...register('password')}
-        />
-        {errors.password && (
-          <p className="text-red-500 text-sm">{errors.password.message}</p>
-        )}
-      </div>
+        <motion.div variants={itemVariants} className="space-y-1">
+          <Label htmlFor="email" className="text-gray-300">Email</Label>
+          <Input
+            id="email"
+            type="email"
+            autoComplete="email"
+            hasError={!!errors.email}
+            {...register('email')}
+          />
+          {errors.email && (
+            <p className="flex items-center text-red-400 text-sm mt-1">
+              <AlertTriangle className="h-4 w-4 mr-1" />
+              {errors.email.message}
+            </p>
+          )}
+        </motion.div>
 
-      {/* Trường Confirm Password */}
-      <div className="space-y-1">
-        <Label htmlFor="confirmPassword">Xác nhận mật khẩu</Label>
-        <Input
-          id="confirmPassword"
-          type="password"
-          autoComplete="new-password"
-          hasError={!!errors.confirmPassword}
-          {...register('confirmPassword')}
-        />
-        {errors.confirmPassword && (
-          <p className="text-red-500 text-sm">
-            {errors.confirmPassword.message}
-          </p>
-        )}
-      </div>
+        <motion.div variants={itemVariants} className="space-y-1">
+          <Label htmlFor="password" className="text-gray-300">Mật khẩu</Label>
+          <Input
+            id="password"
+            type="password"
+            autoComplete="new-password"
+            hasError={!!errors.password}
+            {...register('password')}
+          />
+          {errors.password && (
+            <p className="flex items-center text-red-400 text-sm mt-1">
+              <AlertTriangle className="h-4 w-4 mr-1" />
+              {errors.password.message}
+            </p>
+          )}
+        </motion.div>
 
-      <div>
-        <Button
-          type="submit"
-          className="w-full"
-          isLoading={isSubmitting || !!successMessage} // Vô hiệu hóa khi loading hoặc thành công
-        >
-          Tạo tài khoản
-        </Button>
-      </div>
-    </form>
+        <motion.div variants={itemVariants} className="space-y-1">
+          <Label htmlFor="confirmPassword" className="text-gray-300">Xác nhận mật khẩu</Label>
+          <Input
+            id="confirmPassword"
+            type="password"
+            autoComplete="new-password"
+            hasError={!!errors.confirmPassword}
+            {...register('confirmPassword')}
+          />
+          {errors.confirmPassword && (
+            <p className="flex items-center text-red-400 text-sm mt-1">
+              <AlertTriangle className="h-4 w-4 mr-1" />
+              {errors.confirmPassword.message}
+            </p>
+          )}
+        </motion.div>
+
+        <motion.div variants={itemVariants}>
+          <Button
+            type="submit"
+            variant="secondary"
+            className="w-full"
+            isLoading={isSubmitting || !!successMessage}
+          >
+            Tạo tài khoản
+          </Button>
+        </motion.div>
+      </form>
+    </motion.div>
   );
 };
 export default RegisterForm;

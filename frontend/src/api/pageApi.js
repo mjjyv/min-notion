@@ -71,3 +71,22 @@ export const deletePage = async (id) => {
     throw error.response?.data || { message: error.message };
   }
 };
+
+
+/**
+ * NÂNG CẤP GĐ 4:
+ * Cập nhật chỉ nội dung (content) của một trang.
+ * @param {string} id - Page ID
+ * @param {Array} contentData - Mảng content blocks
+ * @returns {Promise<object>} Nội dung đã được cập nhật
+ */
+export const updatePageContent = async (id, contentData) => {
+  try {
+    const response = await api.put(`/pages/${id}/content`, {
+      content: contentData,
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: error.message };
+  }
+};

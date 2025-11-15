@@ -1,92 +1,101 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ReactSortable } from 'react-sortablejs'; // Drag-and-Drop
-import { useDebounce } from '../../hooks/useDebounce';
-import { updatePageContent } from '../../api/pageApi';
+import { ReactSortable } from 'react-sortablejs';
 import TextBlock from './TextBlock';
 import TodoBlock from './TodoBlock';
-import { Plus } from 'lucide-react';
+import useDebounce from '../../hooks/useDebounce';
+import { updatePageContent } from '../../api/pageApi';
+import { Check, Loader2, AlertTriangle } from 'lucide-react';
+
+const SaveStatusIndicator = ({ saveStatus }) => {
+  let icon = <Check className="h-4 w-4" />;
+  let text = 'Saved';
+
+  if (saveStatus === 'Saving') {
+    icon = <Loader2 className="h-4 w-4 animate-spin" />;
+    text = 'Saving...';
+  } else if (saveStatus === 'Error') {
+    icon = <AlertTriangle className="h-4 w-4 text-red-400" />;
+    text = 'Save failed';
+  }
+
+  return (
+    <div className="flex items-center space-x-1 text-xs text-gray-400">
+      {icon}
+      <span>{text}</span>
+    </div>
+  );
+};
 
 const CoreEditor = ({ pageId, initialContent }) => {
-  const [blocks, setBlocks] = useState(initialContent);
-  const debouncedBlocks = useDebounce(blocks, 1000); // Trì hoãn 1 giây
+  const [blocks, setBlocks] = useState(initialContent || []);
+  const [saveStatus, setSaveStatus] = useState('Saved');
+  const debouncedBlocks = useDebounce(blocks, 1000);
 
-  // 1. Logic Auto-Save
   useEffect(() => {
-    // Chỉ lưu nếu 'debouncedBlocks' thay đổi (và không phải là giá trị ban đầu)
+    setBlocks(initialContent || []);
+    setSaveStatus('Saved'); // Reset status khi đổi trang
+  }, [pageId, initialContent]);
+
+  useEffect(() => {
     if (debouncedBlocks !== initialContent) {
-      console.log('Auto-saving...', pageId);
-      updatePageContent(pageId, debouncedBlocks)
-        .catch(err => console.error("Auto-save failed:", err));
+      const saveContent = async () => {
+        setSaveStatus('Saving');
+        try {
+          await updatePageContent(pageId, debouncedBlocks);
+          setSaveStatus('Saved');
+        } catch (err) {
+          console.error('Auto-save failed:', err);
+          setSaveStatus('Error');
+        }
+      };
+      saveContent();
     }
   }, [debouncedBlocks, pageId, initialContent]);
 
-  // 2. Hàm cập nhật nội dung từ các Block con
-  const handleContentChange = useCallback((blockId, newData) => {
+  const handleBlockChange = useCallback((blockId, newData) => {
+    setSaveStatus('Saving');
     setBlocks((currentBlocks) =>
       currentBlocks.map((block) =>
-        block._id === blockId ? { ...block, data: newData } : block
-      )
+        block._id === blockId ? { ...block, data: newData } : block,
+      ),
     );
   }, []);
 
-  // 3. Hàm render Block (dựa trên type)
+  const onSortEnd = useCallback((newBlockList) => {
+    setSaveStatus('Saving');
+    setBlocks(newBlockList);
+  }, []);
+
   const renderBlock = (block) => {
+    const props = {
+      id: block._id,
+      blockId: block._id,
+      initialData: block.data,
+      onChange: handleBlockChange,
+    };
     switch (block.type) {
       case 'text':
-        return <TextBlock block={block} onContentChange={handleContentChange} />;
+        return <TextBlock {...props} />;
       case 'todo':
-        return <TodoBlock block={block} onContentChange={handleContentChange} />;
+        return <TodoBlock {...props} />;
       default:
-        return <p className="text-red-500">Unknown block type</p>;
+        return <p id={block._id} className="text-red-400">Unknown block</p>;
     }
-  };
-  
-  // 4. Hàm thêm Block mới (Tạm thời)
-  // (Trong tương lai, đây sẽ là Command Menu '/')
-  const addBlock = (type) => {
-    const newBlock = {
-      _id: `temp_${Date.now()}`, // ID tạm
-      type: type,
-      data: type === 'todo' ? { text: '', checked: false } : {},
-    };
-    setBlocks([...blocks, newBlock]);
   };
 
   return (
-    <div className="max-w-3xl mx-auto">
-      {/* 5. Vùng Drag-and-Drop (Sortable) */}
+    <div className="min-h-[400px] px-4 space-y-4">
+      <div className="h-6">
+        <SaveStatusIndicator saveStatus={saveStatus} />
+      </div>
       <ReactSortable
         list={blocks}
-        setList={setBlocks}
+        setList={onSortEnd}
         animation={150}
         className="space-y-4"
-        handle=".drag-handle" // (Sẽ thêm handle sau)
       >
-        {blocks.map((block) => (
-          <div key={block._id || block.temp_id} className="flex items-start">
-            {/* (Placeholder cho Drag Handle)
-            <span className="drag-handle cursor-grab text-gray-500 pr-2">⋮⋮</span> 
-            */}
-            {renderBlock(block)}
-          </div>
-        ))}
+        {blocks.map(renderBlock)}
       </ReactSortable>
-
-      {/* Nút thêm Block (Tạm thời) */}
-      <div className="mt-4 border-t border-neutral-700 pt-4 space-x-2">
-        <button
-          onClick={() => addBlock('text')}
-          className="px-3 py-1 text-sm bg-neutral-700 rounded hover:bg-neutral-600"
-        >
-          <Plus className="h-4 w-4 inline mr-1" /> Text
-        </button>
-        <button
-          onClick={() => addBlock('todo')}
-          className="px-3 py-1 text-sm bg-neutral-700 rounded hover:bg-neutral-600"
-        >
-          <Plus className="h-4 w-4 inline mr-1" /> Todo
-        </button>
-      </div>
     </div>
   );
 };
