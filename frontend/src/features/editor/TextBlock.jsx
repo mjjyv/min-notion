@@ -3,11 +3,28 @@ import {
   Editor,
   EditorState,
   RichUtils,
+  Modifier,
   convertToRaw,
   convertFromRaw,
 } from 'draft-js';
 import 'draft-js/dist/Draft.css';
 import FloatingToolbar from './FloatingToolbar';
+
+// (Style Map này cũng được export để FloatingToolbar sử dụng nếu cần)
+export const colorStyleMap = {
+  // Màu chữ
+  TEXT_COLOR_DEFAULT: { color: 'inherit' },
+  TEXT_COLOR_GRAY: { color: 'rgb(156 163 175)' },
+  TEXT_COLOR_RED: { color: 'rgb(248 113 113)' },
+  TEXT_COLOR_BLUE: { color: 'rgb(96 165 250)' },
+  // Màu nền
+  BG_COLOR_DEFAULT: { backgroundColor: 'inherit' },
+  BG_COLOR_YELLOW: { backgroundColor: 'rgba(253, 224, 71, 0.5)' },
+  BG_COLOR_GREEN: { backgroundColor: 'rgba(74, 222, 128, 0.5)' },
+};
+
+const ALL_TEXT_COLORS = Object.keys(colorStyleMap).filter(s => s.startsWith('TEXT_'));
+const ALL_BG_COLORS = Object.keys(colorStyleMap).filter(s => s.startsWith('BG_'));
 
 // Hàm gán Class CSS cho Block
 const getBlockStyle = (block) => {
@@ -21,11 +38,6 @@ const getBlockStyle = (block) => {
   }
 };
 
-/**
- * @param {string} blockId - ID tạm thời (tempClientId) của block này
- * @param {object} initialData - { contentState: ... } (JSON)
- * @param {function} onChange - Hàm callback (blockId, newData) khi thay đổi
- */
 const TextBlock = ({ blockId, initialData, onChange }) => {
   const [editorState, setEditorState] = useState(() => {
     if (initialData && initialData.contentState) {
@@ -59,7 +71,7 @@ const TextBlock = ({ blockId, initialData, onChange }) => {
       return null;
     }
     
-    const toolbarWidth = toolbarRef.current ? toolbarRef.current.offsetWidth : 160;
+    const toolbarWidth = toolbarRef.current ? toolbarRef.current.offsetWidth : 240; // Ước tính chiều rộng
     let left = rangeRect.left - containerRect.left + (rangeRect.width / 2) - (toolbarWidth / 2);
     let top = rangeRect.top - containerRect.top - 50;
     if (left < 0) left = 0;
@@ -69,8 +81,8 @@ const TextBlock = ({ blockId, initialData, onChange }) => {
 
   const handleEditorChange = (newState) => {
     setEditorState(newState);
-    const selectionState = newState.getSelection();
 
+    const selectionState = newState.getSelection();
     if (!selectionState.isCollapsed()) {
       setTimeout(() => {
         const position = calculateToolbarPosition();
@@ -106,10 +118,40 @@ const TextBlock = ({ blockId, initialData, onChange }) => {
     const newState = RichUtils.toggleInlineStyle(editorState, inlineStyle);
     handleEditorChange(newState);
   };
-
+  
   const toggleBlockType = (blockType) => {
     const newState = RichUtils.toggleBlockType(editorState, blockType);
     handleEditorChange(newState);
+  };
+
+  const toggleColorStyle = (styleToApply) => {
+    const selection = editorState.getSelection();
+    const currentStyle = editorState.getCurrentInlineStyle();
+
+    const stylesToRemove = styleToApply.startsWith('TEXT_')
+      ? ALL_TEXT_COLORS
+      : ALL_BG_COLORS;
+
+    let contentState = editorState.getCurrentContent();
+    const newContentState = stylesToRemove.reduce((content, style) => {
+      if (currentStyle.has(style)) {
+        return Modifier.removeInlineStyle(content, selection, style);
+      }
+      return content;
+    }, contentState);
+
+    let finalContentState = newContentState;
+    if (!styleToApply.endsWith('_DEFAULT')) {
+      finalContentState = Modifier.applyInlineStyle(
+        newContentState,
+        selection,
+        styleToApply
+      );
+    }
+
+    handleEditorChange(
+      EditorState.push(editorState, finalContentState, 'change-inline-style')
+    );
   };
 
   const selection = editorState.getSelection();
@@ -126,6 +168,7 @@ const TextBlock = ({ blockId, initialData, onChange }) => {
         editorState={editorState}
         onToggleInlineStyle={toggleInlineStyle}
         onToggleBlockType={toggleBlockType}
+        onToggleColor={toggleColorStyle}
         currentBlockType={currentBlockType}
       />
 
@@ -141,6 +184,7 @@ const TextBlock = ({ blockId, initialData, onChange }) => {
           handleKeyCommand={handleKeyCommand}
           placeholder="Start typing..."
           blockStyleFn={getBlockStyle}
+          customStyleMap={colorStyleMap}
         />
       </div>
     </div>

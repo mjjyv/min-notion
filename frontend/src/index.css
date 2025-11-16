@@ -2,31 +2,23 @@
 @tailwind utilities;
 
 @layer base {
-  /* 1. Nền tảng Dark Mode (như GĐ 3) */
+  /* 1. Nền tảng Dark Mode */
   html {
-    /* Đổi font (tùy chọn, nhưng tốt cho editor) */
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
   }
   body {
     @apply bg-neutral-900 text-gray-100;
   }
 
-  /* 2. Style cơ bản cho Draft.js Editor (GĐ 4) */
+  /* 2. Style cơ bản cho Draft.js Editor */
   .DraftEditor-root {
     @apply w-full h-full text-base text-gray-100;
   }
   .DraftEditor-editorContainer {
     @apply h-full;
   }
-  .public-DraftEditor-content {
-    @apply min-h-[100px] p-1;
-  }
-  /* Style cho placeholder (ví dụ: "Type '/' for commands...") */
-  .public-DraftEditorPlaceholder-root {
-    @apply absolute text-gray-500 pointer-events-none;
-  }
 
-  /* 1. Thêm các lớp CSS cho Block Styles */
+  /* 3. Style cho Block Types (GĐ 4) */
   .editor-h1 {
     @apply text-3xl font-bold mt-4 mb-2;
   }
@@ -36,35 +28,20 @@
   }
 
   .editor-paragraph {
-    @apply my-1; /* Thêm một chút lề */
+    @apply my-1;
   }
   
-}
-
-/* Container chứa nội dung/thanh nháy */
-.public-DraftEditor-content {
-    /* Các thuộc tính đã có */
+  /* 4. Sửa lỗi căn chỉnh Placeholder (Lỗi 1 & 2) */
+  .public-DraftEditor-content {
+    @apply min-h-[24px]; /* Đảm bảo có chiều cao tối thiểu */
     padding-top: 0 !important;
     margin-top: 0 !important;
-    
-    /* Thêm padding-left để đẩy thanh nháy lùi lại */
-    padding-left: 0px !important; /* Điều chỉnh giá trị 1px này theo nhu cầu */
-}
+  }
 
-/* Placeholder */
-.public-DraftEditorPlaceholder-root {
-    /* Các thuộc tính đã có */
-    position: absolute; 
+  .public-DraftEditorPlaceholder-root {
+    @apply absolute text-gray-500 pointer-events-none;
+    top: 0 !important;
     transform: translateY(0%) !important;
-    line-height: inherit; 
-    font-size: inherit;
-    font-weight: inherit;
-    color: #999; 
-    pointer-events: none; 
-}
-
-/* Container chính của Draft.js Editor */
-.DraftEditor-root {
-    position: relative; 
-    box-sizing: border-box;
+    line-height: inherit;
+  }
 }
