@@ -91,7 +91,11 @@ const PageDetail = ({ pageId, onUpdatePageInList, onDeletePage }) => {
     fetchPage();
   }, [pageId]);
 
-
+  // useEffect(() => {
+  //   if (debouncedTitle && pageData && debouncedTitle !== pageData.title) {
+  //     handleUpdatePage({ title: debouncedTitle });
+  //   }
+  // }, [debouncedTitle, pageData]); // Phụ thuộc đã đúng
 
   const handleUpdatePage = async (data) => {
     if (!pageData) return;
