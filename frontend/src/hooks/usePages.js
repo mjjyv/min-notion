@@ -5,16 +5,15 @@ import {
   deletePage,
 } from '../api/pageApi';
 
-// 1. Định nghĩa các hành động (Actions)
 const ACTIONS = {
   FETCH_START: 'FETCH_START',
   FETCH_SUCCESS: 'FETCH_SUCCESS',
   FETCH_ERROR: 'FETCH_ERROR',
   ADD_PAGE: 'ADD_PAGE',
   DELETE_PAGE: 'DELETE_PAGE',
+  UPDATE_PAGE_IN_LIST: 'UPDATE_PAGE_IN_LIST',
 };
 
-// 2. Định nghĩa Reducer
 const pagesReducer = (state, action) => {
   switch (action.type) {
     case ACTIONS.FETCH_START:
@@ -28,23 +27,29 @@ const pagesReducer = (state, action) => {
     case ACTIONS.FETCH_ERROR:
       return { ...state, isLoading: false, error: action.payload };
     case ACTIONS.ADD_PAGE:
-      // Thêm trang mới vào đầu danh sách
       return {
         ...state,
         pages: [action.payload, ...state.pages],
       };
     case ACTIONS.DELETE_PAGE:
-      // Lọc bỏ trang đã xóa khỏi danh sách
       return {
         ...state,
         pages: state.pages.filter((page) => page._id !== action.payload),
+      };
+    case ACTIONS.UPDATE_PAGE_IN_LIST:
+      return {
+        ...state,
+        pages: state.pages.map((page) =>
+          page._id === action.payload._id
+            ? { ...page, ...action.payload }
+            : page
+        ),
       };
     default:
       return state;
   }
 };
 
-// 3. Định nghĩa Hook
 export const usePages = () => {
   const [state, dispatch] = useReducer(pagesReducer, {
     pages: [],
@@ -52,7 +57,6 @@ export const usePages = () => {
     error: null,
   });
 
-  // 4. Hàm fetch dữ liệu ban đầu (chỉ chạy 1 lần)
   useEffect(() => {
     const fetchInitialPages = async () => {
       dispatch({ type: ACTIONS.FETCH_START });
@@ -66,24 +70,19 @@ export const usePages = () => {
         });
       }
     };
-
     fetchInitialPages();
-  }, []); // Mảng rỗng đảm bảo chỉ chạy 1 lần
+  }, []);
 
-  // 5. Hàm để component bên ngoài gọi (Thêm trang)
   const addNewPage = useCallback(async (title) => {
     try {
       const newPage = await createPage({ title });
       dispatch({ type: ACTIONS.ADD_PAGE, payload: newPage });
-      return newPage; // Trả về trang mới để có thể chọn nó
+      return newPage;
     } catch (err) {
-      // Xử lý lỗi (ví dụ: hiển thị thông báo)
       console.error('Failed to add page:', err);
-      // Có thể dispatch FETCH_ERROR ở đây nếu muốn
     }
   }, []);
 
-  // 6. Hàm để component bên ngoài gọi (Xóa trang)
   const removePage = useCallback(async (id) => {
     try {
       await deletePage(id);
@@ -93,10 +92,15 @@ export const usePages = () => {
     }
   }, []);
 
-  // 7. Trả về state và các hàm
+  const updatePageInList = useCallback((updatedPage) => {
+    const { _id, title, icon } = updatedPage;
+    dispatch({ type: ACTIONS.UPDATE_PAGE_IN_LIST, payload: { _id, title, icon } });
+  }, []);
+
   return {
     ...state,
     addNewPage,
     removePage,
+    updatePageInList,
   };
 };

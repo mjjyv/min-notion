@@ -1,10 +1,12 @@
 import React from 'react';
 import { NotebookText, Trash2 } from 'lucide-react';
-import { cn } from '../../utils/cn'; // (Sử dụng tiện ích classname)
+import { cn } from '../../utils/cn';
 
 const PageItem = ({ page, removePage, onSelect, isActive }) => {
   const handleDelete = (e) => {
     e.stopPropagation();
+    
+    // YÊU CẦU 2: Thêm cảnh báo khi xóa từ sidebar
     if (window.confirm(`Are you sure you want to delete "${page.title}"?`)) {
       removePage(page._id);
     }
@@ -14,41 +16,35 @@ const PageItem = ({ page, removePage, onSelect, isActive }) => {
     onSelect(page._id);
   };
 
-  // 1. Lớp CSS cho container (xử lý nền)
+  const PageIcon = ({ icon }) => {
+    const iconClasses = cn(
+      'h-4 w-4 mr-2 flex-shrink-0',
+      isActive ? 'text-white' : 'text-gray-400 group-hover:text-white'
+    );
+    if (!icon) {
+      return <NotebookText className={iconClasses} />;
+    }
+    return <span className="h-4 w-4 mr-2 shrink-0">{icon}</span>;
+  };
+
   const baseClasses = cn(
-    'flex p-1.5 items-center justify-between w-full',
-    'px-3 text-sm rounded-md',
+    'flex items-center justify-between w-full',
+    'px-3 py-2 text-sm rounded-md',
     'cursor-pointer group transition-colors duration-150',
-    isActive
-      ? 'bg-neutral-700' // Nền khi Active
-      : 'hover:bg-neutral-700' // Nền khi Hover
+    isActive ? 'bg-neutral-700' : 'hover:bg-neutral-700'
   );
 
-  // 2. Lớp CSS cho Icon
-  const iconClasses = cn(
-    'h-4 w-4 mr-2 flex-shrink-0',
-    isActive
-      ? 'text-white' // Icon khi Active
-      : 'text-gray-400 group-hover:text-white' // Icon khi Base/Hover
-  );
-
-  // 3. Lớp CSS cho Text (Label)
   const textClasses = cn(
     'truncate',
-    isActive
-      ? 'text-white font-medium' // Text khi Active (in đậm hơn)
-      : 'text-gray-300 group-hover:text-white' // Text khi Base/Hover
+    isActive ? 'text-white font-medium' : 'text-gray-300 group-hover:text-white'
   );
 
   return (
     <div onClick={handleSelect} className={baseClasses}>
-      {/* Icon và Tên trang */}
       <div className="flex items-center truncate">
-        <NotebookText className={iconClasses} />
+        <PageIcon icon={page.icon} />
         <span className={textClasses}>{page.title}</span>
       </div>
-
-      {/* Nút Xóa (hover-to-show) */}
       <button
         onClick={handleDelete}
         className="
