@@ -21,6 +21,7 @@ const userSchema = new mongoose.Schema(
       minlength: 6,
       select: false, // Tự động ẩn mật khẩu khi truy vấn
     },
+    avatar: { type: String },
   },
   {
     timestamps: true, // Tự động thêm createdAt và updatedAt
@@ -34,13 +35,8 @@ userSchema.pre('save', async function (next) {
     return next();
   }
 
-  try {
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
-    next();
-  } catch (error) {
-    next(error);
-  }
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
 });
 
 // Thêm phương thức 'comparePassword' vào model

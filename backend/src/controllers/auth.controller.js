@@ -1,7 +1,9 @@
 const authService = require('../services/auth.service');
-const asyncHandler = require('../utils/asyncHandler'); // <-- Thêm dòng này
-const ErrorHandler = require('../utils/errorHandler'); // <-- Thêm dòng này
-const User = require('../models/user.model'); // <-- QUAN TRỌNG: Thêm dòng này
+const asyncHandler = require('../utils/asyncHandler'); 
+const ErrorHandler = require('../utils/errorHandler');
+const User = require('../models/user.model');
+// const bcrypt = require('bcryptjs'); 
+
 /**
  * Đăng ký người dùng mới
  */
@@ -51,7 +53,6 @@ const logout = asyncHandler(async (req, res, next) => {
 
 // ... (các import cũ)
 // Thêm import bcrypt nếu chưa có để xử lý đổi mật khẩu
-const bcrypt = require('bcryptjs'); 
 
 // ... (register, login, getMe giữ nguyên)
 
@@ -85,8 +86,9 @@ const updateDetails = asyncHandler(async (req, res, next) => {
   // 4. Cập nhật Mật khẩu
   if (req.body.password) {
     // Hash mật khẩu mới
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(req.body.password, salt);
+    // const salt = await bcrypt.genSalt(10);
+    // user.password = await bcrypt.hash(req.body.password, salt);
+    user.password = req.body.password;
   }
 
   await user.save();
