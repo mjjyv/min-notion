@@ -5,7 +5,7 @@ import TodoBlock from './TodoBlock';
 import useDebounce from '../../hooks/useDebounce';
 import { updatePageContent } from '../../api/pageApi';
 import { Check, Loader2, AlertTriangle } from 'lucide-react';
-
+import ImageBlock from './ImageBlock'; // <-- Import
 let tempIdCounter = 0;
 
 // Helper: Gán ID tạm thời (client-only) cho React/Sortable
@@ -54,6 +54,19 @@ const CoreEditor = ({ pageId, initialContent }) => {
   );
   const [saveStatus, setSaveStatus] = useState('Saved');
   const debouncedBlocks = useDebounce(blocks, 1000);
+
+
+  // Hàm mới: Thay thế một block (Dùng cho Slash Menu)
+  const handleReplaceBlock = useCallback((tempClientId, newType, newData) => {
+    setSaveStatus('Saving');
+    setBlocks((currentBlocks) =>
+      currentBlocks.map((block) =>
+        block.tempClientId === tempClientId
+          ? { ...block, type: newType, data: newData }
+          : block
+      ),
+    );
+  }, []);
 
   // Cập nhật state khi đổi trang
   useEffect(() => {
@@ -113,12 +126,14 @@ const CoreEditor = ({ pageId, initialContent }) => {
       blockId: block.tempClientId, // Truyền xuống component con
       initialData: block.data,
       onChange: handleBlockChange,
+      onReplace: handleReplaceBlock, // <-- Truyền hàm này xuống
     };
     switch (block.type) {
       case 'text':
         return <TextBlock key={block.tempClientId} {...props} />;
       case 'todo':
         return <TodoBlock key={block.tempClientId} {...props} />;
+      case 'image': return <ImageBlock key={block.tempClientId} {...props} />; // <-- Render Image
       default:
         return (
           <p key={block.tempClientId} id={block.tempClientId} className="text-red-400">

@@ -14,5 +14,7 @@ router.post('/login', authController.login);
 router.get('/me', protect, authController.getMe);
 router.post('/logout', protect, authController.logout); // <-- Thêm dòng này
 
+// THÊM ROUTE NÀY
+router.put('/updatedetails', protect, authController.updateDetails);
 
 module.exports = router;

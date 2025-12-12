@@ -90,3 +90,21 @@ export const updatePageContent = async (id, contentData) => {
     throw error.response?.data || { message: error.message };
   }
 };
+
+
+// ... (các import cũ)
+
+export const uploadImage = async (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    // Content-Type 'multipart/form-data' sẽ được axios tự động xử lý
+    const response = await api.post('/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data; // { url: '...' }
+  } catch (error) {
+    throw error.response?.data || { message: error.message };
+  }
+};

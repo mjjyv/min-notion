@@ -18,17 +18,22 @@
     @apply h-full;
   }
 
-  /* 3. Style cho Block Types (GĐ 4) */
-  .editor-h1 {
-    @apply text-3xl font-bold mt-4 mb-2;
-  }
-  
-  .editor-blockquote {
-    @apply border-l-4 border-neutral-600 pl-4 italic text-gray-400 my-2;
-  }
+
 
   .editor-paragraph {
-    @apply my-1;
+    @apply text-base leading-relaxed text-gray-100;
+  }
+
+  .editor-h1 {
+    @apply text-3xl font-bold mt-6 mb-4 text-gray-50;
+  }
+
+  .editor-h2 {
+    @apply text-2xl font-bold mt-5 mb-3 text-gray-200;
+  }
+
+  .editor-blockquote {
+    @apply border-l-4 pl-4 italic text-gray-300 my-4;
   }
   
   /* 4. Sửa lỗi căn chỉnh Placeholder (Lỗi 1 & 2) */

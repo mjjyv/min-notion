@@ -59,6 +59,15 @@ export const logout = async () => {
   }
 };
 
+export const updateUserDetails = async (data) => {
+  try {
+    const response = await api.put('/auth/updatedetails', data);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: error.message };
+  }
+};
+
 /**
  * NÂNG CẤP GĐ 4:
  * Cập nhật chỉ mảng 'content' của một trang.

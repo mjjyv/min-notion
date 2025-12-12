@@ -5,7 +5,10 @@ const Schema = mongoose.Schema;
 const blockSchema = new Schema({
   type: {
     type: String,
-    enum: ['text', 'todo'],
+    // SỬA LỖI: Thêm 'image' vào danh sách enum
+    // Lưu ý: DraftJS xử lý header-one, header-two dưới dạng 'text' block có style,
+    // nhưng nếu bạn tách riêng logic block, hãy thêm vào đây cho chắc.
+    enum: ['text', 'todo', 'image'], 
     required: true,
   },
   data: {
