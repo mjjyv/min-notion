@@ -8,6 +8,8 @@ const ErrorHandler = require('./utils/errorHandler');
 
 const authRoutes = require('./routes/auth.routes');
 const pageRoutes = require('./routes/page.routes'); // <-- THÊM DÒNG NÀY
+// ...
+const uploadRoutes = require('./routes/upload.routes'); // <-- Import
 
 
 const app = express();
@@ -32,6 +34,7 @@ if (config.nodeEnv === 'development') {
 // Sử dụng authRoutes cho tất cả request tới /api/v1/auth
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/pages', pageRoutes); // <-- THÊM DÒNG NÀY
+app.use('/api/v1/upload', uploadRoutes); // <-- Đăng ký
 
 
 // 5. Route Kiểm tra Sức khỏe (Health Check)

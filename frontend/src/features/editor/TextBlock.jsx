@@ -9,15 +9,14 @@ import {
 } from 'draft-js';
 import 'draft-js/dist/Draft.css';
 import FloatingToolbar from './FloatingToolbar';
+import SlashMenu from './SlashMenu'; // Thêm import SlashMenu
 
-// (Style Map này cũng được export để FloatingToolbar sử dụng nếu cần)
+// Style Map (giữ nguyên)
 export const colorStyleMap = {
-  // Màu chữ
   TEXT_COLOR_DEFAULT: { color: 'inherit' },
   TEXT_COLOR_GRAY: { color: 'rgb(156 163 175)' },
   TEXT_COLOR_RED: { color: 'rgb(248 113 113)' },
   TEXT_COLOR_BLUE: { color: 'rgb(96 165 250)' },
-  // Màu nền
   BG_COLOR_DEFAULT: { backgroundColor: 'inherit' },
   BG_COLOR_YELLOW: { backgroundColor: 'rgba(253, 224, 71, 0.5)' },
   BG_COLOR_GREEN: { backgroundColor: 'rgba(74, 222, 128, 0.5)' },
@@ -26,7 +25,6 @@ export const colorStyleMap = {
 const ALL_TEXT_COLORS = Object.keys(colorStyleMap).filter(s => s.startsWith('TEXT_'));
 const ALL_BG_COLORS = Object.keys(colorStyleMap).filter(s => s.startsWith('BG_'));
 
-// Hàm gán Class CSS cho Block
 const getBlockStyle = (block) => {
   switch (block.getType()) {
     case 'header-one':
@@ -38,7 +36,7 @@ const getBlockStyle = (block) => {
   }
 };
 
-const TextBlock = ({ blockId, initialData, onChange }) => {
+const TextBlock = ({ blockId, initialData, onChange, onReplace }) => { // Thêm onReplace
   const [editorState, setEditorState] = useState(() => {
     if (initialData && initialData.contentState) {
       try {
@@ -54,48 +52,68 @@ const TextBlock = ({ blockId, initialData, onChange }) => {
   });
 
   const [toolbarPosition, setToolbarPosition] = useState(null);
+  const [slashMenuPosition, setSlashMenuPosition] = useState(null); // Thêm state cho Slash Menu
+
   const editorContainerRef = useRef(null);
   const toolbarRef = useRef(null);
 
+  // Tính vị trí FloatingToolbar (giữ nguyên)
   const calculateToolbarPosition = () => {
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0 || !editorContainerRef.current) {
       return null;
     }
-
     const range = selection.getRangeAt(0);
     const rangeRect = range.getBoundingClientRect();
     const containerRect = editorContainerRef.current.getBoundingClientRect();
-    
+
     if (rangeRect.width === 0 && rangeRect.height === 0) {
       return null;
     }
-    
-    const toolbarWidth = toolbarRef.current ? toolbarRef.current.offsetWidth : 240; // Ước tính chiều rộng
+
+    const toolbarWidth = toolbarRef.current ? toolbarRef.current.offsetWidth : 240;
     let left = rangeRect.left - containerRect.left + (rangeRect.width / 2) - (toolbarWidth / 2);
     let top = rangeRect.top - containerRect.top - 50;
     if (left < 0) left = 0;
-
     return { top, left, opacity: 1 };
   };
 
   const handleEditorChange = (newState) => {
     setEditorState(newState);
 
-    const selectionState = newState.getSelection();
-    if (!selectionState.isCollapsed()) {
-      setTimeout(() => {
-        const position = calculateToolbarPosition();
-        if (position) {
-          setToolbarPosition(position);
-        }
-      }, 0);
-    } else {
-      if (toolbarPosition) {
-        setToolbarPosition(null);
+    const selection = newState.getSelection();
+    const content = newState.getCurrentContent();
+    const currentBlock = content.getBlockForKey(selection.getStartKey());
+    const blockText = currentBlock.getText();
+    const startOffset = selection.getStartOffset();
+
+    // Phát hiện gõ '/' ở đầu dòng + đang collapsed (chưa chọn vùng)
+    if (blockText.startsWith('/') && startOffset === 1 && selection.isCollapsed() && blockText.length <= 20) {
+      // Hiển thị Slash Menu ngay dưới vị trí con trỏ
+      const domSelection = window.getSelection();
+      if (domSelection.rangeCount > 0) {
+        const range = domSelection.getRangeAt(0);
+        const rect = range.getBoundingClientRect();
+        setSlashMenuPosition({
+          top: rect.bottom + window.scrollY + 8,
+          left: rect.left + window.scrollX,
+        });
       }
+    } else {
+      setSlashMenuPosition(null);
     }
 
+    // Cập nhật FloatingToolbar khi có selection
+    if (!selection.isCollapsed()) {
+      setTimeout(() => {
+        const position = calculateToolbarPosition();
+        if (position) setToolbarPosition(position);
+      }, 0);
+    } else {
+      setToolbarPosition(null);
+    }
+
+    // Lưu nội dung khi thay đổi
     const contentState = newState.getCurrentContent();
     const oldContentState = editorState.getCurrentContent();
     if (contentState !== oldContentState) {
@@ -118,7 +136,7 @@ const TextBlock = ({ blockId, initialData, onChange }) => {
     const newState = RichUtils.toggleInlineStyle(editorState, inlineStyle);
     handleEditorChange(newState);
   };
-  
+
   const toggleBlockType = (blockType) => {
     const newState = RichUtils.toggleBlockType(editorState, blockType);
     handleEditorChange(newState);
@@ -127,10 +145,7 @@ const TextBlock = ({ blockId, initialData, onChange }) => {
   const toggleColorStyle = (styleToApply) => {
     const selection = editorState.getSelection();
     const currentStyle = editorState.getCurrentInlineStyle();
-
-    const stylesToRemove = styleToApply.startsWith('TEXT_')
-      ? ALL_TEXT_COLORS
-      : ALL_BG_COLORS;
+    const stylesToRemove = styleToApply.startsWith('TEXT_') ? ALL_TEXT_COLORS : ALL_BG_COLORS;
 
     let contentState = editorState.getCurrentContent();
     const newContentState = stylesToRemove.reduce((content, style) => {
@@ -142,16 +157,44 @@ const TextBlock = ({ blockId, initialData, onChange }) => {
 
     let finalContentState = newContentState;
     if (!styleToApply.endsWith('_DEFAULT')) {
-      finalContentState = Modifier.applyInlineStyle(
-        newContentState,
-        selection,
-        styleToApply
-      );
+      finalContentState = Modifier.applyInlineStyle(newContentState, selection, styleToApply);
     }
 
-    handleEditorChange(
-      EditorState.push(editorState, finalContentState, 'change-inline-style')
-    );
+    handleEditorChange(EditorState.push(editorState, finalContentState, 'change-inline-style'));
+  };
+
+  // Xử lý khi chọn lệnh từ SlashMenu
+  const onSlashCommand = (command) => {
+    setSlashMenuPosition(null);
+
+    // Xóa dấu '/' và khoảng trắng (nếu có)
+    const selection = editorState.getSelection();
+    const currentBlock = editorState.getCurrentContent().getBlockForKey(selection.getStartKey());
+    const blockKey = currentBlock.getKey();
+    let contentState = editorState.getCurrentContent();
+
+    // Xóa từ đầu dòng đến vị trí hiện tại (xóa '/...')
+    const newSelection = selection.merge({
+      anchorOffset: 0,
+      focusOffset: selection.getFocusOffset(),
+    });
+    contentState = Modifier.removeRange(contentState, newSelection, 'backward');
+    let newEditorState = EditorState.push(editorState, contentState, 'remove-range');
+
+    if (command.type === 'block') {
+      // Ví dụ: /h1 → chuyển thành heading-one
+      newEditorState = RichUtils.toggleBlockType(newEditorState, command.id);
+    } else if (command.type === 'convert' || command.type === 'insert') {
+      // Chuyển sang block khác (Todo, Image, Code, v.v.)
+      const textToPass = command.type === 'convert' ? currentBlock.getText().slice(selection.getFocusOffset()) : '';
+      onReplace(blockId, command.target, { text: textToPass });
+      return; // Không cần update editorState nữa vì block sẽ bị thay thế
+    }
+
+    // Cập nhật lại editor (chỉ khi không replace)
+    handleEditorChange(newEditorState);
+    // Focus lại editor
+    setTimeout(() => editorState.getEditorRef()?.focus(), 0);
   };
 
   const selection = editorState.getSelection();
@@ -162,6 +205,7 @@ const TextBlock = ({ blockId, initialData, onChange }) => {
 
   return (
     <div className="relative w-full group" ref={editorContainerRef}>
+      {/* Floating Toolbar */}
       <FloatingToolbar
         ref={toolbarRef}
         position={toolbarPosition}
@@ -172,8 +216,18 @@ const TextBlock = ({ blockId, initialData, onChange }) => {
         currentBlockType={currentBlockType}
       />
 
+      {/* Slash Menu */}
+      {slashMenuPosition && (
+        <SlashMenu
+          position={slashMenuPosition}
+          onSelect={onSlashCommand}
+          onClose={() => setSlashMenuPosition(null)}
+        />
+      )}
+
+      {/* Editor */}
       <div
-        className="mt-2 prose prose-invert max-w-none 
+        className="mt-2 prose prose-invert max-w-none
                    prose-strong:text-gray-100 prose-em:text-gray-100
                    prose-code:bg-neutral-700 prose-code:text-red-300
                    prose-u:decoration-gray-400"
@@ -182,7 +236,7 @@ const TextBlock = ({ blockId, initialData, onChange }) => {
           editorState={editorState}
           onChange={handleEditorChange}
           handleKeyCommand={handleKeyCommand}
-          placeholder="Start typing..."
+          placeholder="Start typing... (gõ / để thêm khối)"
           blockStyleFn={getBlockStyle}
           customStyleMap={colorStyleMap}
         />

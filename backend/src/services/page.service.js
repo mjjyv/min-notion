@@ -68,16 +68,26 @@ const deletePage = async (pageId, userId) => {
 
 /**
  * Cập nhật CHỈ content của một trang
+ * SỬA LỖI: Dùng findOneAndUpdate để tránh VersionError khi auto-save nhanh
  */
 const updatePageContent = async (pageId, userId, contentData) => {
-  const page = await getPageById(pageId, userId);
-
   if (!Array.isArray(contentData)) {
     throw new ErrorHandler(400, 'Content must be an array');
   }
 
-  page.content = contentData;
-  await page.save();
+  const page = await Page.findOneAndUpdate(
+    { _id: pageId, userId: userId }, // Điều kiện tìm (đảm bảo quyền sở hữu)
+    { content: contentData },        // Dữ liệu cập nhật
+    { 
+      new: true,           // Trả về dữ liệu mới sau khi update
+      runValidators: true  // Vẫn kiểm tra schema (enum, type...)
+    }
+  );
+
+  if (!page) {
+    throw new ErrorHandler(404, 'Page not found or unauthorized');
+  }
+
   return page.content;
 };
 
@@ -87,5 +97,5 @@ module.exports = {
   getPageById,
   updatePage,
   deletePage,
-  updatePageContent,
+  updatePageContent, // <-- Hàm đã sửa
 };
