@@ -1,8 +1,6 @@
-const colors = require('tailwindcss/colors');
-
 /** @type {import('tailwindcss').Config} */
 export default {
-  // 1. Ép Dark Mode (như Notion)
+  // QUAN TRỌNG: Dòng này cho phép chuyển đổi giao diện bằng cách thêm class 'dark' vào thẻ html
   darkMode: 'class', 
   
   content: [
@@ -12,8 +10,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        // 2. Định nghĩa màu (như đã dùng ở GĐ 3)
-        neutral: colors.neutral,
+        neutral: require('tailwindcss/colors').neutral,
         brand: {
           DEFAULT: '#4a69ff',
           medium: '#3b55cc',
@@ -21,11 +18,10 @@ export default {
           light: '#f0f4ff',
         },
       },
-      // 3. Thêm plugin typography cho Draft.js
       typography: (theme) => ({
         DEFAULT: {
           css: {
-            color: theme('colors.gray.100'), // Chữ prose màu sáng
+            color: theme('colors.gray.100'),
             a: {
               color: theme('colors.blue.400'),
               '&:hover': {
@@ -33,13 +29,11 @@ export default {
               },
             },
             strong: { color: theme('colors.gray.100') },
-            // ... (thêm các style khác nếu cần)
           },
         },
       }),
     },
   },
-  // 4. Thêm plugins
   plugins: [
     require('@tailwindcss/forms'),
     require('@tailwindcss/typography'),
